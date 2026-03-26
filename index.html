@@ -344,22 +344,32 @@
         });
 
         // --- 5. INITIALIZATION ---
-        window.onload = () => {
-            // Handshake Sequence
+                window.onload = () => {
             const status = document.getElementById('status-line');
-            setTimeout(() => status.innerText = "[ACCESS GRANTED: J. ASGHAR]", 800);
+            
+            // Show Access Granted quickly
             setTimeout(() => {
-                document.getElementById('handshake').style.opacity = '0';
-                setTimeout(() => document.getElementById('handshake').remove(), 800);
-            }, 1500);
+                status.innerText = "[ACCESS GRANTED: J. ASGHAR]";
+            }, 1000);
+
+            // FORCE the screen to vanish after 3 seconds
+            setTimeout(() => {
+                const hs = document.getElementById('handshake');
+                if(hs) {
+                    hs.style.opacity = '0';
+                    setTimeout(() => hs.remove(), 800);
+                }
+            }, 3000);
 
             // Ticker Generation
             const ticker = document.getElementById('tickerTrack');
             const stocks = ["BTC $64,212 (+2.4%)", "XAU $2,182 (-0.4%)", "TSLA $175.22 (+1.2%)", "AAPL $182.10 (-0.2%)", "ETH $3,421 (+4.1%)"];
             ticker.innerHTML = stocks.map(s => `<span class="ticker-item ${s.includes('-') ? 'drop' : ''}">${s}</span>`).join('').repeat(10);
 
-            // Load Data
+            // Load Data in the background
             fetchAllIntel();
+        };
+
 
             // Region Map Listeners
             document.querySelectorAll('.map-svg path').forEach(path => {
