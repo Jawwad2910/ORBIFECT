@@ -255,11 +255,12 @@
         // --- 2. ENGINE CORE ---
         async function fetchAllIntel() {
             const feed = document.getElementById('newsFeed');
-            const promises = SOURCES.map(src => 
-                fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(src.url)}&api_key=4p3v1y7mqm6q6p6u0v7x6o4p3v1y7mqm6q6p6u0v`) // Extended proxy key
-                .then(r => r.json())
-                .catch(() => ({ items: [] }))
-            );
+                    const promises = SOURCES.map(src => 
+            fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(src.url)}`) 
+            .then(r => r.json())
+            .catch(() => ({ items: [] }))
+        );
+
 
             const results = await Promise.all(promises);
             currentIntel = results.flatMap((res, i) => 
