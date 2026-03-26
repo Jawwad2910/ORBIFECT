@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORBIFECT | Intelligence Terminal</title>
+    <!-- Typography: High-Contrast Headlines & Monospaced Data -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root {
+            --obsidian: #020202;
+            --gold: #E8C84A;
+            --alert: #FF4B2B;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(232, 200, 74, 0.15);
+            --font-mono: 'Roboto Mono', monospace;
+            --font-head: 'Playfair Display', serif;
+        }
+
+        * { box-sizing: border-box; cursor: crosshair; }
+
+        body {
+            background-color: var(--obsidian);
+            color: #ececec;
+            font-family: var(--font-mono);
+            margin: 0;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- MARKET ALPHA TICKER --- */
+        .ticker-wrap {
+            width: 100%;
+            height: 32px;
+            background: #000;
+            border-bottom: 1px solid var(--border);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            z-index: 100;
+        }
+        .ticker {
+            display: inline-block;
+            white-space: nowrap;
+            animation: tickerFlow 60s linear infinite;
+        }
+        .ticker-item {
+            display: inline-block;
+            padding: 0 40px;
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--gold);
+        }
+        .ticker-item span { color: var(--alert); }
+        @keyframes tickerFlow {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* --- MAIN TERMINAL GRID --- */
+        .terminal-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 280px 1fr 350px;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR LEFT: GLOBAL MATRIX --- */
+        .sidebar-left {
+            border-right: 1px solid var(--border);
+            padding: 15px;
+            background: rgba(5, 5, 5, 0.8);
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-title {
+            font-size: 10px;
+            color: var(--gold);
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 5px;
+        }
+        .matrix-map {
+            width: 100%;
+            fill: #111;
+            stroke: var(--gold);
+            stroke-width: 0.8;
+            transition: 0.3s;
+        }
+        .matrix-map path { cursor: pointer; transition: 0.3s; }
+        .matrix-map path:hover { fill: var(--gold); opacity: 0.5; }
+        .system-stats {
+            margin-top: auto;
+            font-size: 10px;
+            color: rgba(232, 200, 74, 0.5);
+            line-height: 1.8;
+        }
+
+        /* --- CENTER FEED: INTELLIGENCE ENGINE --- */
+        .feed-center {
+            overflow-y: scroll;
+            padding: 20px;
+            scrollbar-width: none;
+            background: radial-gradient(circle at center, #0a0a0a 0%, #020202 100%);
+        }
+        .feed-center::-webkit-scrollbar { display: none; }
+        
+        .news-card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            view-transition-name: card; /* Liquid Transition API */
+            position: relative;
+            overflow: hidden;
+        }
+        .news-card:hover {
+            background: rgba(232, 200, 74, 0.05);
+            border-color: var(--gold);
+            transform: translateX(5px);
+        }
+        .card-source {
+            font-size: 10px;
+            color: var(--gold);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .card-title {
+            font-family: var(--font-head);
+            font-size: 1.6rem;
+            line-height: 1.2;
+            margin: 0 0 12px 0;
+            color: #fff;
+        }
+        .card-snippet {
+            font-size: 12px;
+            color: #aaa;
+            line-height: 1.6;
+        }
+
+        /* --- SIDEBAR RIGHT: AI VAULT --- */
+        .sidebar-right {
+            border-left: 1px solid var(--border);
+            background: #050505;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .vault-content {
+            margin-top: 20px;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+        .vault-section {
+            margin-bottom: 25px;
+            animation: fadeIn 0.5s ease-out;
+        }
+        .vault-label {
+            color: var(--gold);
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+        .pulse-loader {
+            height: 2px;
+            background: var(--gold);
+            width: 100%;
+            margin: 10px 0;
+            animation: pulse-shimmer 1.5s infinite;
+        }
+
+        /* --- COMMAND PALETTE (Ctrl+K) --- */
+        #commandPalette {
+            position: fixed;
+            top: 20%; left: 50%;
+            transform: translate(-50%, -20%);
+            width: 600px;
+            background: #0a0a0a;
+            border: 1px solid var(--gold);
+            padding: 25px;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 0 100px rgba(0,0,0,0.9);
+        }
+        #commandInput {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--gold);
+            color: var(--gold);
+            width: 100%;
+            font-family: var(--font-mono);
+            font-size: 20px;
+            outline: none;
+            padding: 10px 0;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes pulse-shimmer {
+            0% { opacity: 0.2; transform: scaleX(0); }
+            50% { opacity: 1; transform: scaleX(1); }
+            100% { opacity: 0.2; transform: scaleX(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Glass Scrollbar for Chrome */
+        .feed-center::-webkit-scrollbar { width: 4px; }
+        .feed-center::-webkit-scrollbar-thumb { background: var(--border); }
+    </style>
+</head>
+<body>
+
+    <header class="ticker-wrap">
+        <div class="ticker" id="marketTicker">
+            <!-- Ticker items auto-generated -->
+        </div>
+    </header>
+
+    <main class="terminal-container">
+        <!-- LEFT: MAP -->
+        <aside class="sidebar-left">
+            <div class="sidebar-title">GEOSPATIAL MATRIX</div>
+            <svg class="matrix-map" viewBox="0 0 100 50">
+                <!-- Simplified Map Clusters -->
+                <path d="M10,10 L30,10 L30,30 L10,30 Z" data-region="Americas" title="Americas"/>
+                <path d="M40,5 L60,5 L60,20 L40,20 Z" data-region="Europe" title="Europe"/>
+                <path d="M40,25 L55,25 L55,40 L40,40 Z" data-region="Middle-East" title="Middle East"/>
+                <path d="M65,10 L90,10 L90,40 L65,40 Z" data-region="Asia" title="Asia Pacific"/>
+            </svg>
+            <div class="system-stats">
+                SECURE UPLINK: ACTIVE<br>
+                LATENCY: 14ms<br>
+                NODES: 35/35<br>
+                ENCRYPTION: AES-256<br>
+                ID: ORBIFECT-0982
+            </div>
+        </aside>
+
+        <!-- CENTER: FEED -->
+        <section class="feed-center" id="intelFeed">
+            <div class="pulse-loader"></div>
+            <!-- News Cards injected here -->
+        </section>
+
+        <!-- RIGHT: AI VAULT -->
+        <aside class="sidebar-right">
+            <div class="sidebar-title">THE AI VAULT // STUDENT PULSE</div>
+            <div id="vaultTarget" class="vault-content">
+                <p style="color: #666; font-size: 11px;">AWAITING INTEL SELECTION...</p>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Command Palette -->
+    <div id="commandPalette">
+        <div style="font-size: 9px; color: var(--gold); margin-bottom: 10px;">SYSTEM COMMAND EXECUTION</div>
+        <input type="text" id="commandInput" placeholder="/region, /topic, or /search...">
+    </div>
+
+    <!-- Haptic SFX -->
+    <audio id="blipSfx" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
+
+    <script>
+        // --- 1. CONFIGURATION & SOURCES ---
+        const RSS_PREFIX = "https://api.rss2json.com/v1/api.json?rss_url=";
+        const SOURCES = [
+            // Global
+            { name: 'Reuters', url: 'https://www.reutersagency.com/feed/', cat: 'Global' },
+            { name: 'AP News', url: 'https://apnews.com/hub/world-news.rss', cat: 'Global' },
+            { name: 'BBC World', url: 'http://feeds.bbci.co.uk/news/world/rss.xml', cat: 'Global' },
+            { name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml', cat: 'Global' },
+            { name: 'DW', url: 'https://rss.dw.com/rdf/rss-en-all', cat: 'Global' },
+            { name: 'France24', url: 'https://www.france24.com/en/rss', cat: 'Global' },
+            // Business
+            { name: 'Bloomberg', url: 'https://www.bloomberg.com/feeds/podcasts/surveillance.xml', cat: 'Business' },
+            { name: 'Financial Times', url: 'https://www.ft.com/geopolitics?format=rss', cat: 'Business' },
+            { name: 'WSJ World', url: 'https://feeds.a.dj.com/rss/RSSWorldNews.xml', cat: 'Business' },
+            { name: 'CNBC', url: 'https://www.cnbc.com/id/100727362/device/rss/rss.html', cat: 'Business' },
+            { name: 'Forbes', url: 'https://www.forbes.com/real-time/feed2/', cat: 'Business' },
+            // Tech/AI
+            { name: 'TechCrunch', url: 'https://techcrunch.com/feed/', cat: 'Tech' },
+            { name: 'Wired', url: 'https://www.wired.com/feed/rss', cat: 'Tech' },
+            { name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', cat: 'Tech' },
+            { name: 'MIT Tech Review', url: 'https://www.technologyreview.com/feed/', cat: 'Tech' },
+            { name: 'AI News', url: 'https://www.artificialintelligence-news.com/feed/', cat: 'Tech' },
+            { name: 'OpenAI Blog', url: 'https://openai.com/news/rss.xml', cat: 'Tech' },
+            // Geopolitics
+            { name: 'Stratfor', url: 'https://worldview.stratfor.com/rss.xml', cat: 'Geo' },
+            { name: 'The Diplomat', url: 'https://thediplomat.com/feed/', cat: 'Geo' },
+            { name: 'CFR', url: 'https://www.cfr.org/rss/newsletters/evening-brief', cat: 'Geo' },
+            { name: 'Foreign Policy', url: 'https://foreignpolicy.com/feed/', cat: 'Geo' },
+            // Regional
+            { name: 'SCMP Asia', url: 'https://www.scmp.com/rss/2/feed.xml', cat: 'Asia' },
+            { name: 'Al Arabiya', url: 'https://english.alarabiya.net/.mrss/en/news.xml', cat: 'Mid-East' }
+        ];
+
+        // Supabase Init
+        const supabase = window.supabase.createClient(
+            "https://fioilphrakfblmvcseef.supabase.co",
+            "EyjhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb2lscGhyYWtmYmxtdmNzZWVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MTE1OTUsImV4cCI6MjA4OTk4NzU5NX0._8oYT35T6zaaf25DPEvg4pTT0cBqTfhsgGQ2bvOSzlM"
+        );
+
+        let masterFeed = [];
+
+        // --- 2. ENGINE LOGIC ---
+        async function fetchIntel() {
+            const feedEl = document.getElementById('intelFeed');
+            
+            try {
+                const promises = SOURCES.slice(0, 15).map(src => 
+                    fetch(`${RSS_PREFIX}${encodeURIComponent(src.url)}`).then(res => res.json())
+                );
+                
+                const results = await Promise.all(promises);
+                
+                masterFeed = results.flatMap((res, index) => {
+                    return (res.items || []).map(item => ({
+                        ...item,
+                        source: SOURCES[index].name,
+                        category: SOURCES[index].cat
+                    }));
+                }).sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+
+                renderFeed(masterFeed);
+            } catch (err) {
+                console.error("Critical Engine Failure", err);
+            }
+        }
+
+        function renderFeed(data) {
+            const feedEl = document.getElementById('intelFeed');
+            
+            const html = data.map((item, idx) => `
+                <div class="news-card" onclick="triggerVault(${idx})">
+                    <span class="card-source">${item.source} // ${item.category}</span>
+                    <h2 class="card-title">${item.title}</h2>
+                    <div class="card-snippet">${item.description.replace(/<[^>]*>?/gm, '').substring(0, 140)}...</div>
+                </div>
+            `).join('');
+
+            if (!document.startViewTransition) {
+                feedEl.innerHTML = html;
+            } else {
+                document.startViewTransition(() => {
+                    feedEl.innerHTML = html;
+                });
+            }
+        }
+
+        // --- 3. AI VAULT: STUDENT PULSE ---
+        function triggerVault(index) {
+            const item = masterFeed[index];
+            const target = document.getElementById('vaultTarget');
+            const blip = document.getElementById('blipSfx');
+            
+            blip.currentTime = 0;
+            blip.play();
+
+            // Simulate AI Synthesis
+            target.innerHTML = `<div class="pulse-loader"></div><p>SYNTHESIZING PULSE...</p>`;
+
+            setTimeout(() => {
+                const cleanDesc = item.description.replace(/<[^>]*>?/gm, '');
+                const keywords = item.title.split(' ').filter(w => w.length > 4);
+                
+                target.innerHTML = `
+                    <div class="vault-section">
+                        <span class="vault-label">[CONTEXT]</span>
+                        Intel pertains to ${keywords[0] || 'Global'} market dynamics and ${keywords[1] || 'strategic'} shifts within the ${item.category} sector.
+                    </div>
+                    <div class="vault-section">
+                        <span class="vault-label">[IMPACT]</span>
+                        High probability of volatility in ${item.source}-tracked indices. Anticipate localized responses in related supply chains.
+                    </div>
+                    <div class="vault-section">
+                        <span class="vault-label">[STUDENT TAKEAWAY]</span>
+                        Monitor the correlation between ${keywords[2] || 'assets'} and the reported ${keywords[0]}. This is a primary case of structural decentralization in the modern terminal landscape.
+                    </div>
+                `;
+            }, 600);
+        }
+
+        // --- 4. COMMAND PALETTE ---
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                const cp = document.getElementById('commandPalette');
+                cp.style.display = cp.style.display === 'block' ? 'none' : 'block';
+                document.getElementById('commandInput').focus();
+            }
+        });
+
+        document.getElementById('commandInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const query = e.target.value.toLowerCase();
+                const filtered = masterFeed.filter(i => 
+                    i.title.toLowerCase().includes(query) || 
+                    i.category.toLowerCase().includes(query)
+                );
+                renderFeed(filtered);
+                document.getElementById('commandPalette').style.display = 'none';
+                e.target.value = '';
+            }
+        });
+
+        // --- 5. INITIALIZATION ---
+        function initTicker() {
+            const track = document.getElementById('marketTicker');
+            const data = [
+                "BTC/USD: $67,432.12 <span>▼ 1.2%</span>",
+                "GOLD: $2,341.50 <span>▲ 0.4%</span>",
+                "TSLA: $174.22 <span>▼ 2.1%</span>",
+                "NVDA: $892.41 <span>▲ 4.5%</span>",
+                "ETH/USD: $3,451.00 <span>▲ 0.8%</span>",
+                "ORBIFECT_IDX: 12,401 <span>▲ 1.1%</span>"
+            ];
+            track.innerHTML = data.map(d => `<div class="ticker-item">${d}</div>`).join('').repeat(4);
+        }
+
+        // Region Click Logic
+        document.querySelectorAll('.matrix-map path').forEach(p => {
+            p.addEventListener('click', () => {
+                const reg = p.getAttribute('data-region').toLowerCase();
+                const filtered = masterFeed.filter(i => i.category.toLowerCase().includes(reg) || i.source.toLowerCase().includes(reg));
+                renderFeed(filtered.length ? filtered : masterFeed);
+            });
+        });
+
+        window.onload = () => {
+            initTicker();
+            fetchIntel();
+            // Optional: Log visit to Supabase for terminal analytics
+            supabase.from('logs').insert([{ action: 'terminal_access', time: new Date() }]);
+        };
+    </script>
+</body>
+</html>
